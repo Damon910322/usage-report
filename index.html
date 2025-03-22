@@ -3,19 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Usage Lookup</title>
+  <title>Usage Lookup Tool</title>
   <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
   <div class="container">
     <h1>Usage Lookup Tool</h1>
-    <p>Please upload the latest Usage Report</p>
-    <input type="file" id="csvFileInput" accept=".csv" />
-    
+    <p>Please upload the latest Usage Report (.xlsx only)</p>
+    <input type="file" id="excelFileInput" accept=".xlsx" />
+
     <div id="peopleSoftSection" style="display:none;">
-  	<p>Enter one or more PeopleSoft Numbers (comma or space separated):</p>
-  	<textarea id="peopleSoftInput" rows="4" cols="40" placeholder="e.g. 12345, 67890"></textarea><br>
-  	<button id="lookupBtn">Lookup</button>
+      <p>Enter one or more PeopleSoft Numbers (comma or space separated):</p>
+      <textarea id="peopleSoftInput" rows="4" cols="40" placeholder="e.g. 12345, 67890"></textarea><br>
+      <button id="lookupBtn">Lookup</button>
     </div>
 
     <div id="result"></div>
