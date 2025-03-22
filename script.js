@@ -1,39 +1,36 @@
 let usageData = [];
 
-document.getElementById("csvFileInput").addEventListener("change", function(event) {
+document.getElementById("excelFileInput").addEventListener("change", function(event) {
   const file = event.target.files[0];
   if (!file) return;
 
   const reader = new FileReader();
 
   reader.onload = function(e) {
-    const text = e.target.result;
-    const lines = text.split(/\r?\n/).filter(line => line.trim() !== "");
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, { type: "array" });
 
-    const headers = lines[0].split(",").map(h => h.trim());
-    const itemIndex = headers.indexOf("Item Numbers");
-    const usageIndex = headers.indexOf("Usage");
-    const spendIndex = headers.indexOf("Spend");
+    const sheetName = workbook.SheetNames[0]; // Only one sheet expected
+    const worksheet = workbook.Sheets[sheetName];
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "", raw: true });
 
-    if (itemIndex === -1 || usageIndex === -1 || spendIndex === -1) {
-      document.getElementById("result").textContent =
-        "Invalid CSV headers. Make sure you have 'Item Numbers', 'Usage', and 'Spend'.";
+    // Validate headers
+    if (!jsonData[0] || !("Item Numbers" in jsonData[0]) || !("Usage" in jsonData[0]) || !("Spend" in jsonData[0])) {
+      document.getElementById("result").textContent = "Missing required columns: 'Item Numbers', 'Usage', 'Spend'";
       return;
     }
 
-    usageData = lines.slice(1).map(line => {
-      const parts = line.split(",");
-      return {
-        item: parts[itemIndex]?.trim(),
-        usage: parseFloat(parts[usageIndex]) || 0,
-        spend: parseFloat(parts[spendIndex]) || 0
-      };
-    });
+    // Store formatted data
+    usageData = jsonData.map(row => ({
+      item: String(row["Item Numbers"]).trim(),
+      usage: parseFloat(row["Usage"]) || 0,
+      spend: parseFloat(row["Spend"]) || 0
+    }));
 
     document.getElementById("peopleSoftSection").style.display = "block";
   };
 
-  reader.readAsText(file);
+  reader.readAsArrayBuffer(file);
 });
 
 document.getElementById("lookupBtn").addEventListener("click", function() {
