@@ -46,8 +46,8 @@ document.getElementById("lookupBtn").addEventListener("click", function () {
     const range = XLSX.utils.decode_range(worksheet["!ref"]);
     for (let rowNum = range.s.r + 1; rowNum <= range.e.r; rowNum++) {
       const itemCell = worksheet[XLSX.utils.encode_cell({ c: 0, r: rowNum })];    // Column A
-      const spendCell = worksheet[XLSX.utils.encode_cell({ c: 28, r: rowNum })];  // Column AC
-      const usageCell = worksheet[XLSX.utils.encode_cell({ c: 44, r: rowNum })];  // Column AS
+      const spendCell = worksheet[XLSX.utils.encode_cell({ c: 1, r: rowNum })];  // Column AC
+      const usageCell = worksheet[XLSX.utils.encode_cell({ c: 2, r: rowNum })];  // Column AS
 
       const itemNumber = itemCell ? String(itemCell.v).trim() : "";
       if (!peopleSoftNumbers.includes(itemNumber)) continue;
