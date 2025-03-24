@@ -8,45 +8,50 @@ document.getElementById("excelFileInput").addEventListener("change", function(ev
   loader.style.display = "block";
 
   const reader = new FileReader();
-reader.onload = function(e) {
-  const data = new Uint8Array(e.target.result);
-  const workbook = XLSX.read(data, { type: "array" });
-  const sheetName = workbook.SheetNames[0];
-  const worksheet = workbook.Sheets[sheetName];
 
-  // Get raw rows as arrays
-  const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+  reader.onload = function(e) {
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, { type: "array" });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
 
-  if (rows.length < 2) {
-    document.getElementById("loader").style.display = "none";
+    // Read all rows from the sheet
+    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+
+    console.log("📦 Total rows loaded:", rows.length);
+    console.log("🧪 Sample row:", rows[1]);
+
+    // Filter out blank or invalid data rows (must have Item Number at column 0)
+    const dataRows = rows.slice(1).filter(row => row[0] !== undefined && row[0] !== "");
+
+    if (dataRows.length === 0) {
+      loader.style.display = "none";
+      Swal.fire({
+        icon: 'error',
+        title: 'Invalid Format',
+        text: "No valid data rows found in the file.",
+      });
+      return;
+    }
+
+    // Map usable rows
+    usageData = dataRows.map(row => ({
+      item: String(row[0] || "").trim(),        // Column A = Item Number
+      spend: parseFloat(row[28]) || 0,          // Column AC = Merchandise Amt
+      usage: parseFloat(row[44]) || 0           // Column AS = Each Quantity
+    }));
+
+    loader.style.display = "none";
+
     Swal.fire({
-      icon: 'error',
-      title: 'Invalid Format',
-      text: "The file does not have enough data rows.",
+      icon: 'success',
+      title: 'File Loaded!',
+      text: 'Now enter a PeopleSoft Number to search.',
+      confirmButtonColor: '#3085d6'
     });
-    return;
-  }
 
-  // Safely pull values by index even if row is short
-  usageData = rows.slice(1).map(row => ({
-    item: String(row[0] || "").trim(),      // Column A
-    spend: parseFloat(row[28]) || 0,        // Column AC
-    usage: parseFloat(row[44]) || 0         // Column AS
-  }));
-
-  document.getElementById("loader").style.display = "none";
-
-  Swal.fire({
-    icon: 'success',
-    title: 'File Loaded!',
-    text: 'Now enter a PeopleSoft Number to search.',
-    confirmButtonColor: '#3085d6'
-  });
-
-  document.getElementById("peopleSoftSection").style.display = "block";
-};
-
-
+    document.getElementById("peopleSoftSection").style.display = "block";
+  };
 
   reader.readAsArrayBuffer(file);
 });
