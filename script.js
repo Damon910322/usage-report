@@ -45,9 +45,10 @@ document.getElementById("lookupBtn").addEventListener("click", function () {
 
     const range = XLSX.utils.decode_range(worksheet["!ref"]);
     for (let rowNum = range.s.r + 1; rowNum <= range.e.r; rowNum++) {
-      const itemCell = worksheet[XLSX.utils.encode_cell({ c: 0, r: rowNum })];    // Column A
-      const spendCell = worksheet[XLSX.utils.encode_cell({ c: 1, r: rowNum })];  // Column AC
-      const usageCell = worksheet[XLSX.utils.encode_cell({ c: 2, r: rowNum })];  // Column AS
+      const itemCell = worksheet[XLSX.utils.encode_cell({ c: 0, r: rowNum })];    // Column A - PeopleSoft Number
+      const spendCell = worksheet[XLSX.utils.encode_cell({ c: 1, r: rowNum })];   // Column B - Merchandise Amt (Spend)
+      const usageCell = worksheet[XLSX.utils.encode_cell({ c: 2, r: rowNum })];   // Column C - Each Quantity (Usage)
+
 
       const itemNumber = itemCell ? String(itemCell.v).trim() : "";
       if (!peopleSoftNumbers.includes(itemNumber)) continue;
