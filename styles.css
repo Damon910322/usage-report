@@ -1,31 +1,27 @@
 body {
   font-family: Arial, sans-serif;
   background-color: #f0f4f8;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
   margin: 0;
+  padding: 0;
 }
 
 .container {
-  background: white;
-  padding: 2rem;
-  border-radius: 10px;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-  text-align: center;
+  margin-top: 60px;
+  max-width: 800px;
 }
 
-input[type="file"],
-input[type="text"],
-button {
-  margin-top: 1rem;
-  padding: 0.5rem;
-  font-size: 1rem;
+.card {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+#loader {
+  margin: 20px 0;
 }
 
 #result {
-  margin-top: 2rem;
-  font-size: 1.2rem;
-  color: #333;
+  margin-top: 30px;
+}
+
+table.dataTable {
+  width: 100% !important;
 }
