@@ -17,7 +17,7 @@ reader.onload = function(e) {
   // Read sheet as raw array of rows
   const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
 
-  if (rows.length < 2 || rows[0].length < 45) {
+  if (rows.length < 2 || !rows[1][44] || !rows[1][28] || !rows[1][0]) {
     document.getElementById("loader").style.display = "none";
     Swal.fire({
       icon: 'error',
