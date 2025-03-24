@@ -1,69 +1,28 @@
-let usageData = [];
+let peopleSoftNumbers = [];
+let resultMap = {};
 
 document.getElementById("excelFileInput").addEventListener("change", function(event) {
   const file = event.target.files[0];
   if (!file) return;
 
-  const loader = document.getElementById("loader");
-  loader.style.display = "block";
+  Swal.fire({
+    icon: 'info',
+    title: 'File Loaded!',
+    text: 'Now enter a PeopleSoft Number to search.',
+    confirmButtonColor: '#3085d6'
+  });
 
-  const reader = new FileReader();
+  document.getElementById("peopleSoftSection").style.display = "block";
 
-  reader.onload = function(e) {
-    const data = new Uint8Array(e.target.result);
-    const workbook = XLSX.read(data, { type: "array" });
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-
-    // Read all rows from the sheet
-    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
-
-    console.log("📊 Raw rows:", rows);
-    rows.slice(0, 5).forEach((r, i) => console.log(`Row ${i}:`, r));
-
-    console.log("📦 Total rows loaded:", rows.length);
-    console.log("🧪 Sample row:", rows[1]);
-
-    // Filter out blank or invalid data rows (must have Item Number at column 0)
-    const dataRows = rows.slice(1).filter(row => row[0] !== undefined && row[0] !== "");
-
-    if (dataRows.length === 0) {
-      loader.style.display = "none";
-      Swal.fire({
-        icon: 'error',
-        title: 'Invalid Format',
-        text: "No valid data rows found in the file.",
-      });
-      return;
-    }
-
-    // Map usable rows
-    usageData = dataRows.map(row => ({
-      item: String(row[0] || "").trim(),        // Column A = Item Number
-      spend: parseFloat(row[28]) || 0,          // Column AC = Merchandise Amt
-      usage: parseFloat(row[44]) || 0           // Column AS = Each Quantity
-    }));
-
-    loader.style.display = "none";
-
-    Swal.fire({
-      icon: 'success',
-      title: 'File Loaded!',
-      text: 'Now enter a PeopleSoft Number to search.',
-      confirmButtonColor: '#3085d6'
-    });
-
-    document.getElementById("peopleSoftSection").style.display = "block";
-  };
-
-  reader.readAsArrayBuffer(file);
+  // Save the file reference for when we search
+  window.uploadedExcelFile = file;
 });
 
-document.getElementById("lookupBtn").addEventListener("click", function() {
+document.getElementById("lookupBtn").addEventListener("click", function () {
   const input = document.getElementById("peopleSoftInput").value;
-  const itemNumbers = input.split(/[\s,]+/).map(num => num.trim()).filter(num => num !== "");
+  peopleSoftNumbers = input.split(/[\s,]+/).map(num => num.trim()).filter(num => num !== "");
 
-  if (itemNumbers.length === 0) {
+  if (peopleSoftNumbers.length === 0) {
     Swal.fire({
       icon: 'warning',
       title: 'Missing Input',
@@ -72,6 +31,46 @@ document.getElementById("lookupBtn").addEventListener("click", function() {
     return;
   }
 
+  const loader = document.getElementById("loader");
+  loader.style.display = "block";
+
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, { type: "array" });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+
+    resultMap = {};
+
+    const range = XLSX.utils.decode_range(worksheet["!ref"]);
+    for (let rowNum = range.s.r + 1; rowNum <= range.e.r; rowNum++) {
+      const itemCell = worksheet[XLSX.utils.encode_cell({ c: 0, r: rowNum })];    // Column A
+      const spendCell = worksheet[XLSX.utils.encode_cell({ c: 28, r: rowNum })];  // Column AC
+      const usageCell = worksheet[XLSX.utils.encode_cell({ c: 44, r: rowNum })];  // Column AS
+
+      const itemNumber = itemCell ? String(itemCell.v).trim() : "";
+      if (!peopleSoftNumbers.includes(itemNumber)) continue;
+
+      const spend = parseFloat(spendCell ? spendCell.v : 0) || 0;
+      const usage = parseFloat(usageCell ? usageCell.v : 0) || 0;
+
+      if (!resultMap[itemNumber]) {
+        resultMap[itemNumber] = { usage: 0, spend: 0 };
+      }
+
+      resultMap[itemNumber].usage += usage;
+      resultMap[itemNumber].spend += spend;
+    }
+
+    loader.style.display = "none";
+    displayResults();
+  };
+
+  reader.readAsArrayBuffer(window.uploadedExcelFile);
+});
+
+function displayResults() {
   let resultHTML = `
     <table id="resultTable" class="table table-striped table-bordered mt-4">
       <thead class="table-dark">
@@ -86,12 +85,10 @@ document.getElementById("lookupBtn").addEventListener("click", function() {
 
   let anyMatch = false;
 
-  itemNumbers.forEach(number => {
-    const matches = usageData.filter(row => row.item.toLowerCase() === number.toLowerCase());
-    if (matches.length > 0) {
-      const totalUsage = matches.reduce((sum, row) => sum + row.usage, 0);
-      const totalSpend = matches.reduce((sum, row) => sum + row.spend, 0);
-      const formattedSpend = totalSpend.toLocaleString('en-US', {
+  peopleSoftNumbers.forEach(number => {
+    const result = resultMap[number];
+    if (result) {
+      const formattedSpend = result.spend.toLocaleString('en-US', {
         style: 'currency',
         currency: 'USD'
       });
@@ -99,7 +96,7 @@ document.getElementById("lookupBtn").addEventListener("click", function() {
       resultHTML += `
         <tr>
           <td>${number}</td>
-          <td>${totalUsage}</td>
+          <td>${result.usage}</td>
           <td>${formattedSpend}</td>
         </tr>
       `;
@@ -127,4 +124,4 @@ document.getElementById("lookupBtn").addEventListener("click", function() {
       text: 'None of the entered PeopleSoft Numbers matched the data.'
     });
   }
-});
+}
