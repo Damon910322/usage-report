@@ -8,46 +8,46 @@ document.getElementById("excelFileInput").addEventListener("change", function(ev
   loader.style.display = "block";
 
   const reader = new FileReader();
-  reader.onload = function(e) {
-    const data = new Uint8Array(e.target.result);
-    const workbook = XLSX.read(data, { type: "array" });
+reader.onload = function(e) {
+  const data = new Uint8Array(e.target.result);
+  const workbook = XLSX.read(data, { type: "array" });
 
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "", raw: true });
+  const sheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[sheetName];
+  const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "", raw: true });
 
-    // Find expected headers
-    if (!jsonData[0] ||
-        !("Item Number" in jsonData[0]) ||
-        !("Each Quantity" in jsonData[0]) ||
-        !("Merchandise Amt" in jsonData[0])) {
-      loader.style.display = "none";
-      Swal.fire({
-        icon: 'error',
-        title: 'Invalid Format',
-        text: "Missing columns: 'Item Number', 'Each Quantity', or 'Merchandise Amt'.",
-      });
-      return;
-    }
-
-    // Format and store data
-    usageData = jsonData.map(row => ({
-      item: String(row["Item Number"]).trim(),
-      usage: parseFloat(row["Each Quantity"]) || 0,
-      spend: parseFloat(row["Merchandise Amt"]) || 0
-    }));
-
+  // Look for actual column headers used in your file
+  if (!jsonData[0] ||
+      !("Item Number" in jsonData[0]) ||
+      !("Each Quantity" in jsonData[0]) ||
+      !("Merchandise Amt" in jsonData[0])) {
     loader.style.display = "none";
-
     Swal.fire({
-      icon: 'success',
-      title: 'File Loaded!',
-      text: 'Now enter a PeopleSoft Number to search.',
-      confirmButtonColor: '#3085d6'
+      icon: 'error',
+      title: 'Invalid Format',
+      text: "Missing columns: 'Item Number', 'Each Quantity', or 'Merchandise Amt'.",
     });
+    return;
+  }
 
-    document.getElementById("peopleSoftSection").style.display = "block";
-  };
+  // Map your data to standard keys for display
+  usageData = jsonData.map(row => ({
+    item: String(row["Item Number"]).trim(),
+    usage: parseFloat(row["Each Quantity"]) || 0,
+    spend: parseFloat(row["Merchandise Amt"]) || 0
+  }));
+
+  loader.style.display = "none";
+
+  Swal.fire({
+    icon: 'success',
+    title: 'File Loaded!',
+    text: 'Now enter a PeopleSoft Number to search.',
+    confirmButtonColor: '#3085d6'
+  });
+
+  document.getElementById("peopleSoftSection").style.display = "block";
+};
 
   reader.readAsArrayBuffer(file);
 });
