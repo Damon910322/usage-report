@@ -14,29 +14,24 @@ reader.onload = function(e) {
   const sheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[sheetName];
 
-  // Read raw rows as array for flexible mapping
+  // Read sheet as raw array of rows
   const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
 
-  const headers = rows[0].map(h => h.toString().trim().replace(/\s+/g, " ")); // Normalize
-  const itemIndex = headers.findIndex(h => h === "Item Number");
-  const usageIndex = headers.findIndex(h => h === "Each Quantity");
-  const spendIndex = headers.findIndex(h => h === "Merchandise Amt");
-
-  if (itemIndex === -1 || usageIndex === -1 || spendIndex === -1) {
+  if (rows.length < 2 || rows[0].length < 45) {
     document.getElementById("loader").style.display = "none";
     Swal.fire({
       icon: 'error',
       title: 'Invalid Format',
-      text: "Missing columns: 'Item Number', 'Each Quantity', or 'Merchandise Amt'.",
+      text: "The file doesn't have enough rows or columns (expected at least 45 columns).",
     });
     return;
   }
 
-  // Map remaining rows into objects
+  // Fixed indices: 0 = Item Number, 28 = Merchandise Amt, 44 = Each Quantity
   usageData = rows.slice(1).map(row => ({
-    item: String(row[itemIndex] || "").trim(),
-    usage: parseFloat(row[usageIndex]) || 0,
-    spend: parseFloat(row[spendIndex]) || 0
+    item: String(row[0] || "").trim(),             // Column A
+    spend: parseFloat(row[28]) || 0,               // Column AC
+    usage: parseFloat(row[44]) || 0                // Column AS
   }));
 
   document.getElementById("loader").style.display = "none";
@@ -50,6 +45,7 @@ reader.onload = function(e) {
 
   document.getElementById("peopleSoftSection").style.display = "block";
 };
+
 
   reader.readAsArrayBuffer(file);
 });
