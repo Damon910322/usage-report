@@ -18,6 +18,9 @@ document.getElementById("excelFileInput").addEventListener("change", function(ev
     // Read all rows from the sheet
     const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
 
+    console.log("📊 Raw rows:", rows);
+    rows.slice(0, 5).forEach((r, i) => console.log(`Row ${i}:`, r));
+
     console.log("📦 Total rows loaded:", rows.length);
     console.log("🧪 Sample row:", rows[1]);
 
