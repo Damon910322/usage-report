@@ -14,37 +14,27 @@ document.getElementById("excelFileInput").addEventListener("change", function(ev
 
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "", raw: true });
 
-    const jsonData = XLSX.utils.sheet_to_json(worksheet, {
-      defval: "",
-      header: 1, // raw array of rows
-    });
-
-    const headers = jsonData[0];
-    const itemCol = 0;    // Column A
-    const spendCol = 28;  // Column AC
-    const usageCol = 44;  // Column AS
-
-    const isValid = jsonData.length > 1 &&
-      headers.length > usageCol &&
-      headers[itemCol] &&
-      headers[usageCol] &&
-      headers[spendCol];
-
-    if (!isValid) {
+    // Find expected headers
+    if (!jsonData[0] ||
+        !("Item Number" in jsonData[0]) ||
+        !("Each Quantity" in jsonData[0]) ||
+        !("Merchandise Amt" in jsonData[0])) {
       loader.style.display = "none";
       Swal.fire({
         icon: 'error',
         title: 'Invalid Format',
-        text: "The file is missing the required columns in A (Item Numbers), AC (Spend), or AS (Usage).",
+        text: "Missing columns: 'Item Number', 'Each Quantity', or 'Merchandise Amt'.",
       });
       return;
     }
 
-    usageData = jsonData.slice(1).map(row => ({
-      item: String(row[itemCol] || "").trim(),
-      spend: parseFloat(row[spendCol]) || 0,
-      usage: parseFloat(row[usageCol]) || 0
+    // Format and store data
+    usageData = jsonData.map(row => ({
+      item: String(row["Item Number"]).trim(),
+      usage: parseFloat(row["Each Quantity"]) || 0,
+      spend: parseFloat(row["Merchandise Amt"]) || 0
     }));
 
     loader.style.display = "none";
