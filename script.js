@@ -11,17 +11,19 @@ document.getElementById("excelFileInput").addEventListener("change", function(ev
 reader.onload = function(e) {
   const data = new Uint8Array(e.target.result);
   const workbook = XLSX.read(data, { type: "array" });
-
   const sheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[sheetName];
-  const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "", raw: true });
 
-  // Look for actual column headers used in your file
-  if (!jsonData[0] ||
-      !("Item Number" in jsonData[0]) ||
-      !("Each Quantity" in jsonData[0]) ||
-      !("Merchandise Amt" in jsonData[0])) {
-    loader.style.display = "none";
+  // Read raw rows as array for flexible mapping
+  const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+
+  const headers = rows[0].map(h => h.toString().trim().replace(/\s+/g, " ")); // Normalize
+  const itemIndex = headers.findIndex(h => h === "Item Number");
+  const usageIndex = headers.findIndex(h => h === "Each Quantity");
+  const spendIndex = headers.findIndex(h => h === "Merchandise Amt");
+
+  if (itemIndex === -1 || usageIndex === -1 || spendIndex === -1) {
+    document.getElementById("loader").style.display = "none";
     Swal.fire({
       icon: 'error',
       title: 'Invalid Format',
@@ -30,14 +32,14 @@ reader.onload = function(e) {
     return;
   }
 
-  // Map your data to standard keys for display
-  usageData = jsonData.map(row => ({
-    item: String(row["Item Number"]).trim(),
-    usage: parseFloat(row["Each Quantity"]) || 0,
-    spend: parseFloat(row["Merchandise Amt"]) || 0
+  // Map remaining rows into objects
+  usageData = rows.slice(1).map(row => ({
+    item: String(row[itemIndex] || "").trim(),
+    usage: parseFloat(row[usageIndex]) || 0,
+    spend: parseFloat(row[spendIndex]) || 0
   }));
 
-  loader.style.display = "none";
+  document.getElementById("loader").style.display = "none";
 
   Swal.fire({
     icon: 'success',
