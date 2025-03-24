@@ -14,24 +14,24 @@ reader.onload = function(e) {
   const sheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[sheetName];
 
-  // Read sheet as raw array of rows
+  // Get raw rows as arrays
   const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
 
-  if (rows.length < 2 || !rows[1][44] || !rows[1][28] || !rows[1][0]) {
+  if (rows.length < 2) {
     document.getElementById("loader").style.display = "none";
     Swal.fire({
       icon: 'error',
       title: 'Invalid Format',
-      text: "The file doesn't have enough rows or columns (expected at least 45 columns).",
+      text: "The file does not have enough data rows.",
     });
     return;
   }
 
-  // Fixed indices: 0 = Item Number, 28 = Merchandise Amt, 44 = Each Quantity
+  // Safely pull values by index even if row is short
   usageData = rows.slice(1).map(row => ({
-    item: String(row[0] || "").trim(),             // Column A
-    spend: parseFloat(row[28]) || 0,               // Column AC
-    usage: parseFloat(row[44]) || 0                // Column AS
+    item: String(row[0] || "").trim(),      // Column A
+    spend: parseFloat(row[28]) || 0,        // Column AC
+    usage: parseFloat(row[44]) || 0         // Column AS
   }));
 
   document.getElementById("loader").style.display = "none";
@@ -45,6 +45,7 @@ reader.onload = function(e) {
 
   document.getElementById("peopleSoftSection").style.display = "block";
 };
+
 
 
   reader.readAsArrayBuffer(file);
