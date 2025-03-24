@@ -4,32 +4,50 @@ document.getElementById("excelFileInput").addEventListener("change", function(ev
   const file = event.target.files[0];
   if (!file) return;
 
-  const reader = new FileReader();
+  const loader = document.getElementById("loader");
+  loader.style.display = "block";
 
+  const reader = new FileReader();
   reader.onload = function(e) {
     const data = new Uint8Array(e.target.result);
     const workbook = XLSX.read(data, { type: "array" });
 
-    const sheetName = workbook.SheetNames[0]; // Only one sheet expected
+    const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-    const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "", raw: true });
 
-    // Validate headers
-    if (!jsonData[0] || !("Item Numbers" in jsonData[0]) || !("Usage" in jsonData[0]) || !("Spend" in jsonData[0])) {
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+      defval: "",
+      header: 1, // raw array of rows
+    });
+
+    const headers = jsonData[0];
+    const itemCol = 0;    // Column A
+    const spendCol = 28;  // Column AC
+    const usageCol = 44;  // Column AS
+
+    const isValid = jsonData.length > 1 &&
+      headers.length > usageCol &&
+      headers[itemCol] &&
+      headers[usageCol] &&
+      headers[spendCol];
+
+    if (!isValid) {
+      loader.style.display = "none";
       Swal.fire({
         icon: 'error',
         title: 'Invalid Format',
-        text: "Missing columns: 'Item Numbers', 'Usage', or 'Spend'",
+        text: "The file is missing the required columns in A (Item Numbers), AC (Spend), or AS (Usage).",
       });
       return;
     }
 
-    // Store formatted data
-    usageData = jsonData.map(row => ({
-      item: String(row["Item Numbers"]).trim(),
-      usage: parseFloat(row["Usage"]) || 0,
-      spend: parseFloat(row["Spend"]) || 0
+    usageData = jsonData.slice(1).map(row => ({
+      item: String(row[itemCol] || "").trim(),
+      spend: parseFloat(row[spendCol]) || 0,
+      usage: parseFloat(row[usageCol]) || 0
     }));
+
+    loader.style.display = "none";
 
     Swal.fire({
       icon: 'success',
@@ -72,7 +90,7 @@ document.getElementById("lookupBtn").addEventListener("click", function() {
   let anyMatch = false;
 
   itemNumbers.forEach(number => {
-    const matches = usageData.filter(row => row.item === number);
+    const matches = usageData.filter(row => row.item.toLowerCase() === number.toLowerCase());
     if (matches.length > 0) {
       const totalUsage = matches.reduce((sum, row) => sum + row.usage, 0);
       const totalSpend = matches.reduce((sum, row) => sum + row.spend, 0);
@@ -96,8 +114,6 @@ document.getElementById("lookupBtn").addEventListener("click", function() {
 
   if (anyMatch) {
     document.getElementById("result").innerHTML = resultHTML;
-
-    // ✅ Initialize DataTable after table is added to DOM
     $('#resultTable').DataTable();
 
     Swal.fire({
